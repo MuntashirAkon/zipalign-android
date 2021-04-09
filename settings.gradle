@@ -1,0 +1,3 @@
+include ':zipalign'
+include ':app'
+rootProject.name = "ZipAlign"

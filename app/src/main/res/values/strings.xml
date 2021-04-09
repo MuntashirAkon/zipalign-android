@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ZipAlignTest</string>
+    <string name="select_apk">Select APK</string>
+    <string name="apk_already_aligned">APK has already been aligned.</string>
+    <string name="could_not_align_apk">Couldn\'t align the APK file</string>
+    <string name="apk_successfully_aligned">APK successfully aligned.</string>
+</resources>
