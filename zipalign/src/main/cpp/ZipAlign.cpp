@@ -26,12 +26,12 @@ JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_doZipAlign
 extern "C"
 JNIEXPORT jboolean
 JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_isZipAligned
-(JNIEnv *env, jclass clazz, jstring zipFile, jint alignment) {
+(JNIEnv *env, jclass clazz, jstring zipFile, jint alignment, jboolean pageAlignSharedLibs) {
     const char *fileName = env->GetStringUTFChars(zipFile, nullptr);
     if(!fileName) {
         return JNI_FALSE;
     }
-    bool verified = verify(fileName, alignment, false) == 0;
+    bool verified = verify(fileName, alignment, pageAlignSharedLibs, false) == 0;
     env->ReleaseStringUTFChars(zipFile, fileName);
     return verified ? JNI_TRUE : JNI_FALSE;
 }

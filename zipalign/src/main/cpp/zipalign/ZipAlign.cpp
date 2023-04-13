@@ -24,6 +24,36 @@
 
 using namespace android;
 
+// An entry is considered a directory if it has a stored size of zero
+// and it ends with '/' or '\' character.
+static bool isDirectory(ZipEntry* entry) {
+   if (entry->getUncompressedLen() != 0) {
+       return false;
+   }
+
+   const char* name = entry->getFileName();
+   size_t nameLength = strlen(name);
+   char lastChar = name[nameLength-1];
+   return lastChar == '/' || lastChar == '\\';
+}
+
+static int getAlignment(bool pageAlignSharedLibs, int defaultAlignment,
+    ZipEntry* pEntry) {
+
+    static const int kPageAlignment = 4096;
+
+    if (!pageAlignSharedLibs) {
+        return defaultAlignment;
+    }
+
+    const char* ext = strrchr(pEntry->getFileName(), '.');
+    if (ext && strcmp(ext, ".so") == 0) {
+        return kPageAlignment;
+    }
+
+    return defaultAlignment;
+}
+
 /*
  * Copy all entries from "pZin" to "pZout", aligning as needed.
  */
@@ -121,7 +151,7 @@ int process(const char *inFileName, const char *outFileName, int alignment, bool
  * Verify the alignment of a zip archive.
  */
 extern "C"
-int verify(const char *fileName, int alignment, bool verbose) {
+int verify(const char *fileName, int alignment, bool pageAlignSharedLibs, bool verbose) {
     ZipFile zipFile;
     bool foundBad = false;
 
@@ -141,21 +171,28 @@ int verify(const char *fileName, int alignment, bool verbose) {
         if (pEntry->isCompressed()) {
             if (verbose) {
                 printf("%8ld %s (OK - compressed)\n",
-                       (long) pEntry->getFileOffset(), pEntry->getFileName());
+                       (intmax_t) pEntry->getFileOffset(), pEntry->getFileName());
             }
+        } else if(isDirectory(pEntry)) {
+            // Directory entries do not need to be aligned.
+            if (verbose)
+                printf("%8jd %s (OK - directory)\n",
+                        (intmax_t) pEntry->getFileOffset(), pEntry->getFileName());
+            continue;
         } else {
-            long offset = pEntry->getFileOffset();
-            if ((offset % alignment) != 0) {
+            intmax_t offset = pEntry->getFileOffset();
+            const int alignTo = getAlignment(pageAlignSharedLibs, alignment, pEntry);
+            if ((offset % alignTo) != 0) {
                 if (verbose) {
                     printf("%8ld %s (BAD - %ld)\n",
-                           (long) offset, pEntry->getFileName(),
-                           offset % alignment);
+                           (intmax_t) offset, pEntry->getFileName(),
+                           (intmax_t) (offset % alignTo));
                 }
                 foundBad = true;
             } else {
                 if (verbose) {
                     printf("%8ld %s (OK)\n",
-                           (long) offset, pEntry->getFileName());
+                           (intmax_t) offset, pEntry->getFileName());
                 }
             }
         }

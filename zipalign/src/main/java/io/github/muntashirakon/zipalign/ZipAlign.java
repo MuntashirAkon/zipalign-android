@@ -22,9 +22,10 @@ public class ZipAlign {
     /**
      * Verify the alignment of a zip archive.
      *
-     * @param zipFie    The zip file whose alignment has to be verified
-     * @param alignment Alignment (in bytes) for uncompressed entries.
+     * @param zipFie              The zip file whose alignment has to be verified
+     * @param alignment           Alignment (in bytes) for uncompressed entries.
+     * @param pageAlignSharedLibs Align .so files to 4096 and other files to {@code alignment}, or all files to {@code alignment} if false
      * @return {@code true} on success.
      */
-    public static native boolean isZipAligned(String zipFie, int alignment);
+    public static native boolean isZipAligned(String zipFie, int alignment, boolean pageAlignSharedLibs);
 }

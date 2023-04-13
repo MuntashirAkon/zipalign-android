@@ -35,10 +35,12 @@ int process(const char* input, const char* output, int alignTo, bool force);
 /*
  * Verify the alignment of a zip archive.
  * - alignTo: Alignment (in bytes) for uncompressed entries.
+ * - pageAlignSharedLibs: Align .so files to 4096 and other files to
+ *   alignTo, or all files to alignTo if false.
  *
  * Returns 0 on success.
  */
-int verify(const char* fileName, int alignTo, bool verbose);
+int verify(const char* fileName, int alignTo, bool pageAlignSharedLibs, bool verbose);
 
 }; // namespace android
 

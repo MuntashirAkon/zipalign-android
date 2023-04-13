@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @WorkerThread
     public void zipAlign(@NonNull File sourceApk) throws IOException {
-        if (ZipAlign.isZipAligned(sourceApk.getAbsolutePath(), 9)) {
+        if (ZipAlign.isZipAligned(sourceApk.getAbsolutePath(), 9, true)) {
             displayToast(R.string.apk_already_aligned);
             return;
         }
