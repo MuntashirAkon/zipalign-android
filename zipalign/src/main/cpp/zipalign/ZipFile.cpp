@@ -520,6 +520,31 @@ bail:
 }
 
 /*
+ * Based on the current position in the output zip, assess where the entry
+ * payload will end up if written as-is. If alignment is not satisfactory,
+ * add some padding in the extra field.
+ */
+status_t ZipFile::alignEntry(ZipEntry *pEntry, uint32_t alignTo) {
+    if (alignTo == 0 || alignTo == 1)
+        return OK;
+
+    // Calculate where the entry payload offset will end up if we were to write
+    // it as-is.
+    uint64_t expectedPayloadOffset = ftello(mZipFp) +
+        ZipEntry::LocalFileHeader::kLFHLen +
+        pEntry->mLFH.mFileNameLength +
+        pEntry->mLFH.mExtraFieldLength;
+
+    // If the alignment is not what was requested, add some padding in the extra
+    // so the payload ends up where is requested.
+    uint64_t alignDiff = alignTo - (expectedPayloadOffset % alignTo);
+    if (alignDiff == alignTo)
+        return OK;
+
+    return pEntry->addPadding(alignDiff);
+}
+
+/*
  * Add an entry by copying it from another zip file.  If "padding" is
  * nonzero, the specified number of bytes will be added to the "extra"
  * field in the header.
@@ -527,7 +552,7 @@ bail:
  * If "ppEntry" is non-NULL, a pointer to the new entry will be returned.
  */
 status_t ZipFile::add(const ZipFile *pSourceZip, const ZipEntry *pSourceEntry,
-                      int padding, ZipEntry **ppEntry) {
+                      int alignTo, ZipEntry **ppEntry) {
     ZipEntry *pEntry = nullptr;
     status_t result;
     long lfhPosn, endPosn;
@@ -551,13 +576,12 @@ status_t ZipFile::add(const ZipFile *pSourceZip, const ZipEntry *pSourceEntry,
     }
 
     result = pEntry->initFromExternal(pSourceZip, pSourceEntry);
-    if (result != NO_ERROR)
+    if (result != OK)
         goto bail;
-    if (padding != 0) {
-        result = pEntry->addPadding(padding);
-        if (result != NO_ERROR)
-            goto bail;
-    }
+
+    result = alignEntry(pEntry, alignTo);
+    if (result != OK)
+        goto bail;
 
     /*
      * From here on out, failures are more interesting.
@@ -589,7 +613,7 @@ status_t ZipFile::add(const ZipFile *pSourceZip, const ZipEntry *pSourceEntry,
         copyLen += ZipEntry::kDataDescriptorLen;
 
     if (copyPartialFpToFp(mZipFp, pSourceZip->mZipFp, copyLen, nullptr)
-            != NO_ERROR) {
+            != OK) {
         ALOGW("copy of '%s' failed\n", pEntry->mCDE.mFileName);
         result = UNKNOWN_ERROR;
         goto bail;

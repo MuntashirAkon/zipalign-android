@@ -11,13 +11,14 @@ public class ZipAlign {
      * <b><em>NOTE:</em></b> If the APK is to be signed with schema v2 or later, the APK must be aligned <em>before</em>
      * signing it, and for v1 schema (AKA jar signing), the APK must be aligned <em>after</em> signing it.
      *
-     * @param inZipFile  The zip file to be aligned.
-     * @param outZipFile File where the aligned zip file will be saved.
-     * @param alignment  Alignment (in bytes) for uncompressed entries.
-     * @param force      Overwrite output if it exists, fail otherwise.
+     * @param inZipFile           The zip file to be aligned.
+     * @param outZipFile          File where the aligned zip file will be saved.
+     * @param alignment           Alignment (in bytes) for uncompressed entries.
+     * @param pageAlignSharedLibs Align .so files to 4096 and other files to {@code alignment}, or all files to {@code alignment} if false
+     * @param force               Overwrite output if it exists, fail otherwise.
      * @return {@code true} on success.
      */
-    public static native boolean doZipAlign(String inZipFile, String outZipFile, int alignment, boolean force);
+    public static native boolean doZipAlign(String inZipFile, String outZipFile, int alignment, boolean pageAlignSharedLibs, boolean force);
 
     /**
      * Verify the alignment of a zip archive.

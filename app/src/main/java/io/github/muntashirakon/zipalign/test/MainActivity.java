@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
             File targetApk = File.createTempFile(fileName, ".apk", getExternalFilesDir(null));
-            boolean success = ZipAlign.doZipAlign(sourceApk.getAbsolutePath(), targetApk.getAbsolutePath(), 9, true);
+            boolean success = ZipAlign.doZipAlign(sourceApk.getAbsolutePath(), targetApk.getAbsolutePath(), 9, true, true);
             if (!success) {
                 displayToast(R.string.could_not_align_apk);
                 targetApk.delete();

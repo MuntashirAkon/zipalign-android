@@ -7,7 +7,7 @@ using namespace android;
 extern "C"
 JNIEXPORT jboolean
 JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_doZipAlign
-(JNIEnv *env, jclass clazz, jstring inZipFile, jstring outZipFile, jint alignment, jboolean force) {
+(JNIEnv *env, jclass clazz, jstring inZipFile, jstring outZipFile, jint alignment, jboolean pageAlignSharedLibs, jboolean force) {
     const char *inFileName = env->GetStringUTFChars(inZipFile, nullptr);
     if (!inFileName) {
         return JNI_FALSE;
@@ -17,7 +17,7 @@ JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_doZipAlign
         env->ReleaseStringUTFChars(inZipFile, inFileName);
         return JNI_FALSE;
     }
-    bool aligned = process(inFileName, outFileName, alignment, force) == 0;
+    bool aligned = process(inFileName, outFileName, alignment, pageAlignSharedLibs, force) == 0;
     env->ReleaseStringUTFChars(inZipFile, inFileName);
     env->ReleaseStringUTFChars(outZipFile, outFileName);
     return aligned ? JNI_TRUE : JNI_FALSE;

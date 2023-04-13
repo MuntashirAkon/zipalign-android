@@ -57,10 +57,9 @@ static int getAlignment(bool pageAlignSharedLibs, int defaultAlignment,
 /*
  * Copy all entries from "pZin" to "pZout", aligning as needed.
  */
-static int copyAndAlign(ZipFile *pZin, ZipFile *pZout, int alignment) {
+static int copyAndAlign(ZipFile *pZin, ZipFile *pZout, int alignment, bool pageAlignSharedLibs) {
     int numEntries = pZin->getNumEntries();
     ZipEntry *pEntry;
-    int bias = 0;
     status_t status;
 
     for (int i = 0; i < numEntries; i++) {
@@ -73,30 +72,23 @@ static int copyAndAlign(ZipFile *pZin, ZipFile *pZout, int alignment) {
             return 1;
         }
 
-        if (pEntry->isCompressed()) {
+        if (pEntry->isCompressed() || isDirectory(pEntry)) {
             /* copy the entry without padding */
             //printf("--- %s: orig at %ld len=%ld (compressed)\n",
             //    pEntry->getFileName(), (long) pEntry->getFileOffset(),
             //    (long) pEntry->getUncompressedLen());
-
+            status = pZout->add(pZin, pEntry, padding, &pNewEntry);
         } else {
-            /*
-             * Copy the entry, adjusting as required.  We assume that the
-             * file position in the new file will be equal to the file
-             * position in the original.
-             */
-            long newOffset = pEntry->getFileOffset() + bias;
-            padding = (alignment - (newOffset % alignment)) % alignment;
+            const int alignTo = getAlignment(pageAlignSharedLibs, alignment, pEntry);
 
             //printf("--- %s: orig at %ld(+%d) len=%ld, adding pad=%d\n",
             //    pEntry->getFileName(), (long) pEntry->getFileOffset(),
             //    bias, (long) pEntry->getUncompressedLen(), padding);
+            status = pZout->add(pZin, pEntry, alignTo, &pNewEntry);
         }
 
-        status = pZout->add(pZin, pEntry, padding, &pNewEntry);
-        if (status != NO_ERROR)
+        if (status != OK)
             return 1;
-        bias += padding;
         //printf(" added '%s' at %ld (pad=%d)\n",
         //    pNewEntry->getFileName(), (long) pNewEntry->getFileOffset(),
         //    padding);
@@ -110,7 +102,7 @@ static int copyAndAlign(ZipFile *pZin, ZipFile *pZout, int alignment) {
  * output file exists and "force" wasn't specified.
  */
 extern "C"
-int process(const char *inFileName, const char *outFileName, int alignment, bool force) {
+int process(const char *inFileName, const char *outFileName, int alignment, bool pageAlignSharedLibs, bool force) {
     ZipFile zin, zout;
 
     //printf("PROCESS: align=%d in='%s' out='%s' force=%d\n",
@@ -139,7 +131,7 @@ int process(const char *inFileName, const char *outFileName, int alignment, bool
         return 1;
     }
 
-    int result = copyAndAlign(&zin, &zout, alignment);
+    int result = copyAndAlign(&zin, &zout, alignment, pageAlignSharedLibs);
     if (result != 0) {
         printf("zipalign: failed rewriting '%s' to '%s'\n",
                inFileName, outFileName);

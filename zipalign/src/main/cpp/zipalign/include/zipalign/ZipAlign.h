@@ -26,11 +26,13 @@ namespace android {
 /*
  * Generate a new, aligned, zip "output" from an "input" zip.
  * - alignTo: Alignment (in bytes) for uncompressed entries.
+ * - pageAlignSharedLibs: Align .so files to 4096 and other files to
+ *   alignTo, or all files to alignTo if false.
  * - force  : Overwrite output if it exists, fail otherwise.
  *
  * Returns 0 on success.
  */
-int process(const char* input, const char* output, int alignTo, bool force);
+int process(const char* input, const char* output, int alignTo, bool pageAlignSharedLibs, bool force);
 
 /*
  * Verify the alignment of a zip archive.
