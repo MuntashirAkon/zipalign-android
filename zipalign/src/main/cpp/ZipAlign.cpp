@@ -9,12 +9,18 @@ JNIEXPORT jboolean
 JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_doZipAlign
 (JNIEnv *env, jclass clazz, jstring inZipFile, jstring outZipFile, jint alignment, jboolean force) {
     const char *inFileName = env->GetStringUTFChars(inZipFile, nullptr);
-    const char *outFileName = env->GetStringUTFChars(outZipFile, nullptr);
-    if(!inFileName || !outFileName) {
+    if (!inFileName) {
         return JNI_FALSE;
     }
-    if (process(inFileName, outFileName, alignment, force) == 0) return JNI_TRUE;
-    return JNI_FALSE;
+    const char *outFileName = env->GetStringUTFChars(outZipFile, nullptr);
+    if(!outFileName) {
+        env->ReleaseStringUTFChars(inZipFile, inFileName);
+        return JNI_FALSE;
+    }
+    bool aligned = process(inFileName, outFileName, alignment, force) == 0;
+    env->ReleaseStringUTFChars(inZipFile, inFileName);
+    env->ReleaseStringUTFChars(outZipFile, outFileName);
+    return aligned ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"
@@ -25,6 +31,7 @@ JNICALL Java_io_github_muntashirakon_zipalign_ZipAlign_isZipAligned
     if(!fileName) {
         return JNI_FALSE;
     }
-    if(verify(fileName, alignment, false) == 0) return JNI_TRUE;
-    return JNI_FALSE;
+    bool verified = verify(fileName, alignment, false) == 0;
+    env->ReleaseStringUTFChars(zipFile, fileName);
+    return verified ? JNI_TRUE : JNI_FALSE;
 }
